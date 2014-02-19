@@ -9,6 +9,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -18,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -39,18 +43,18 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	private static final int DAYS_IN_WEEK = 7;
 	private static final int MAX_WEEKS_IN_MONTH = 6;
 
-	private final JTextField text;
-	private final JButton button;
+	private final JTextField dateText;
+	private final JButton popupButton;
 	private final JPopupMenu popup;
-	private final JPanel calendar;
+	private final JPanel panelCal;
+	private final DatePickerModel model;
+
 	private JLabel monthText;
 
 	private List<JLabel> dayLabels;
 
 	private int year;
 	private int month;
-
-	private final DatePickerModel model;
 
 	public DatePicker(Date value) {
 		this(new DefaultDatePickerModel());
@@ -59,22 +63,21 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	public DatePicker(DatePickerModel model) {
 		this.model = model;
 
-		text = new JTextField();
+		dateText = new JTextField();
+		dateText.addFocusListener(this);
 
-		text.addFocusListener(this);
+		popupButton = new JButton("<HTML>&hellip;</HTML>");
+		panelCal = createCalendar();
 
-		button = new JButton("<HTML>&hellip;</HTML>");
 		popup = new JPopupMenu();
-		calendar = createCalendar();
+		popup.add(panelCal);
 
-		popup.add(calendar);
-
-		button.setMargin(new Insets(0, 4, 0, 4));
-		button.addActionListener(new DropButtonListener(this, model));
+		popupButton.setMargin(new Insets(0, 4, 0, 4));
+		popupButton.addActionListener(new DropButtonListener(this, model));
 
 		setLayout(new BorderLayout());
-		add(text, BorderLayout.CENTER);
-		add(button, BorderLayout.LINE_END);
+		add(dateText, BorderLayout.CENTER);
+		add(popupButton, BorderLayout.LINE_END);
 
 		model.addDateChangeListener(this);
 	}
@@ -168,7 +171,7 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 		for (int i = 0; i < MAX_WEEKS_IN_MONTH * DAYS_IN_WEEK; i++) {
 			JLabel dayLabel = new JLabel();
 
-			dayLabel.addMouseListener(new GridMouseListener(this, i));
+			dayLabel.addMouseListener(new GridMouseListener(model, i));
 
 			dayLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			dayLabel.setBackground(UIManager.getColor("Table.background"));
@@ -241,7 +244,14 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 		int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
 		int firstDay = calendar.getFirstDayOfWeek();
 
-		calendar.add(Calendar.DATE, firstDay - dayOfWeek);
+		if (dayOfWeek < firstDay) {
+			int daysInWeek = calendar.getMaximum(Calendar.DAY_OF_WEEK);
+
+			calendar.add(Calendar.DATE, firstDay - dayOfWeek - daysInWeek);
+		} else {
+			calendar.add(Calendar.DATE, firstDay - dayOfWeek);
+		}
+
 		return calendar;
 	}
 
@@ -270,12 +280,12 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	}
 
 	private void updateText() {
-		text.setText(model.getText());
+		dateText.setText(model.getText());
 
 		if (model.isValid()) {
-			text.setBackground(UIManager.getColor("TextField.background"));
+			dateText.setBackground(UIManager.getColor("TextField.background"));
 		} else {
-			text.setBackground(UIManager
+			dateText.setBackground(UIManager
 					.getColor("OptionPane.warningDialog.titlePane.background"));
 		}
 	}
@@ -317,7 +327,7 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 
 	public void setPopupVisible(boolean value) {
 		if (!popup.isVisible() && value) {
-			popup.show(button, 0, button.getHeight());
+			popup.show(popupButton, 0, popupButton.getHeight());
 		}
 
 		if (popup.isVisible() && !value) {
@@ -328,29 +338,17 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	private class GridMouseListener extends MouseAdapter implements
 			MouseListener {
 
-		private final DatePicker picker;
+		private final DatePickerModel model;
 		private final int index;
 
-		GridMouseListener(DatePicker picker, int index) {
-			this.picker = picker;
+		GridMouseListener(DatePickerModel model, int index) {
+			this.model = model;
 			this.index = index;
 		}
 
 		@Override
 		public void mousePressed(MouseEvent e) {
-			updateSelected(e.getSource());
-			updateGrid();
-		}
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-			updateSelected(e.getSource());
-			updateGrid();
-		}
-
-		@Override
-		public void mouseDragged(MouseEvent e) {
-			updateSelected(e.getSource());
+			updateSelected();
 			updateGrid();
 		}
 
@@ -359,13 +357,94 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 			popup.setVisible(false);
 		}
 
-		private void updateSelected(Object source) {
-			int gridIndex = index;
-
+		private void updateSelected() {
 			Calendar calendar = getStartOfGrid();
-			calendar.add(Calendar.DATE, gridIndex);
 
-			picker.setValue(calendar.getTime());
+			calendar.add(Calendar.DATE, index);
+
+			model.setDate(calendar.getTime());
+		}
+
+	}
+
+	private class GridKeyListener extends KeyAdapter implements KeyListener {
+
+		private final DatePickerModel model;
+		private final Calendar calendar;
+
+		GridKeyListener(DatePickerModel model) {
+			this.model = model;
+
+			Locale locale = Locale.getDefault();
+			calendar = Calendar.getInstance(locale);
+		}
+
+		@Override
+		public void keyTyped(KeyEvent e) {
+			int keyCode = e.getKeyCode();
+
+			switch (keyCode) {
+			case KeyEvent.VK_PAGE_UP:
+				addMonth(-1);
+				break;
+
+			case KeyEvent.VK_PAGE_DOWN:
+				addMonth(1);
+				break;
+
+			case KeyEvent.VK_UP:
+				addDays(-1);
+				break;
+
+			case KeyEvent.VK_DOWN:
+				addDays(1);
+				break;
+
+			case KeyEvent.VK_LEFT:
+				addWeeks(-1);
+				break;
+
+			case KeyEvent.VK_RIGHT:
+				addWeeks(1);
+				break;
+
+			case KeyEvent.VK_ENTER:
+				popup.setVisible(false);
+				break;
+			}
+		}
+
+		private void addMonth(int offsetMonths) {
+			if (!model.isValid()) {
+				return;
+			}
+
+			calendar.setTime(model.getDate());
+			calendar.add(Calendar.MONTH, offsetMonths);
+
+			model.setDate(calendar.getTime());
+		}
+
+		private void addWeeks(int offsetWeeks) {
+			if (!model.isValid()) {
+				return;
+			}
+
+			calendar.setTime(model.getDate());
+			calendar.add(Calendar.WEEK_OF_MONTH, offsetWeeks);
+
+			model.setDate(calendar.getTime());
+		}
+
+		private void addDays(int offsetDays) {
+			if (!model.isValid()) {
+				return;
+			}
+
+			calendar.setTime(model.getDate());
+			calendar.add(Calendar.DAY_OF_WEEK, offsetDays);
+
+			model.setDate(calendar.getTime());
 		}
 
 	}
@@ -374,7 +453,7 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	}
 
 	public void focusLost(FocusEvent event) {
-		model.setText(text.getText());
+		model.setText(dateText.getText());
 	}
 
 }
