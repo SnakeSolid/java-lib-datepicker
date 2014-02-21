@@ -3,7 +3,6 @@ package ru.snake.datepicker.model;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.Locale;
 
 public class DefaultDatePickerModel extends AbstractDatePickerModel implements
 		DatePickerModel {
@@ -11,13 +10,31 @@ public class DefaultDatePickerModel extends AbstractDatePickerModel implements
 	private final DateFormat format;
 
 	public DefaultDatePickerModel() {
-		this(DateFormat.DEFAULT, DateFormat.SHORT);
+		this(ModelFormat.DATETIME);
 	}
 
-	public DefaultDatePickerModel(int dateStyle, int timeStyle) {
-		Locale locale = Locale.getDefault();
+	public DefaultDatePickerModel(ModelFormat modelFormat) {
+		switch (modelFormat) {
+		case DATE:
+			format = DateFormat.getDateInstance(DateFormat.DEFAULT);
+			break;
 
-		format = DateFormat.getDateTimeInstance(dateStyle, timeStyle, locale);
+		case TIME:
+			format = DateFormat.getTimeInstance(DateFormat.SHORT);
+			break;
+
+		case DATETIME:
+			format = DateFormat.getDateTimeInstance(DateFormat.DEFAULT,
+					DateFormat.SHORT);
+			break;
+
+		default:
+			throw new IllegalArgumentException();
+		}
+	}
+
+	public DefaultDatePickerModel(DateFormat format) {
+		this.format = format;
 	}
 
 	@Override

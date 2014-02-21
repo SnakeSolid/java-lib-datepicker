@@ -63,7 +63,7 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	public DatePicker(DatePickerModel model) {
 		this.model = model;
 
-		dateText = new JTextField();
+		dateText = new JTextField(model.getText());
 		dateText.addFocusListener(this);
 
 		popupButton = new JButton("<HTML>&hellip;</HTML>");
