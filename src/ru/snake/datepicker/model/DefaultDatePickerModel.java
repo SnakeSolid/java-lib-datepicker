@@ -20,7 +20,7 @@ public class DefaultDatePickerModel extends AbstractDatePickerModel implements
 			break;
 
 		case TIME:
-			format = DateFormat.getTimeInstance(DateFormat.SHORT);
+			format = DateFormat.getTimeInstance(DateFormat.DEFAULT);
 			break;
 
 		case DATETIME:

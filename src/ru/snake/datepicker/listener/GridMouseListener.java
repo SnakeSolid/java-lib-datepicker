@@ -28,14 +28,6 @@ public class GridMouseListener extends MouseAdapter implements MouseListener {
 	}
 
 	private void updateSelected() {
-		Calendar calendar = getStartOfGrid();
-
-		calendar.add(Calendar.DATE, index);
-
-		pager.setSelected(calendar.getTime());
-	}
-
-	private Calendar getStartOfGrid() {
 		int year = pager.getYear();
 		int month = pager.getMonth();
 
@@ -44,16 +36,17 @@ public class GridMouseListener extends MouseAdapter implements MouseListener {
 
 		int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
 		int firstDay = calendar.getFirstDayOfWeek();
+		int daysOffset = firstDay - dayOfWeek + index;
 
 		if (dayOfWeek < firstDay) {
 			int daysInWeek = calendar.getMaximum(Calendar.DAY_OF_WEEK);
 
-			calendar.add(Calendar.DATE, firstDay - dayOfWeek - daysInWeek);
+			calendar.add(Calendar.DATE, daysOffset - daysInWeek);
 		} else {
-			calendar.add(Calendar.DATE, firstDay - dayOfWeek);
+			calendar.add(Calendar.DATE, daysOffset);
 		}
 
-		return calendar;
+		pager.setSelected(calendar.getTime());
 	}
 
 }

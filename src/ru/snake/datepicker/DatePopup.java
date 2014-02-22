@@ -192,7 +192,6 @@ public class DatePopup extends JPopupMenu implements DatePager {
 
 		monthText.setText(headerFormat.format(calendar.getTime()));
 
-		//invalidate();
 		repaint();
 	}
 
@@ -216,9 +215,22 @@ public class DatePopup extends JPopupMenu implements DatePager {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 
+		if (model.isValid()) {
+			Calendar modelCal = Calendar.getInstance();
+			Date modelDate = model.getDate();
+
+			modelCal.setTime(modelDate);
+
+			calendar.set(Calendar.HOUR, modelCal.get(Calendar.HOUR));
+			calendar.set(Calendar.MINUTE, modelCal.get(Calendar.MINUTE));
+			calendar.set(Calendar.SECOND, modelCal.get(Calendar.SECOND));
+			calendar.set(Calendar.MILLISECOND,
+					modelCal.get(Calendar.MILLISECOND));
+		}
+
 		year = calendar.get(Calendar.YEAR);
 		month = calendar.get(Calendar.MONTH);
-		selected = date;
+		selected = calendar.getTime();
 
 		updateGrid();
 	}
@@ -231,7 +243,7 @@ public class DatePopup extends JPopupMenu implements DatePager {
 	@Override
 	public void addYear(int count) {
 		Calendar calendar = Calendar.getInstance();
-		calendar.set(year, month, 1);
+		calendar.set(year, month, calendar.getMinimum(Calendar.DAY_OF_MONTH));
 		calendar.add(Calendar.YEAR, count);
 
 		year = calendar.get(Calendar.YEAR);
@@ -248,7 +260,7 @@ public class DatePopup extends JPopupMenu implements DatePager {
 	@Override
 	public void addMonth(int count) {
 		Calendar calendar = Calendar.getInstance();
-		calendar.set(year, month, 1);
+		calendar.set(year, month, calendar.getMinimum(Calendar.DAY_OF_MONTH));
 		calendar.add(Calendar.MONTH, count);
 
 		year = calendar.get(Calendar.YEAR);
