@@ -271,11 +271,11 @@ public class DatePopup extends JPopupMenu implements DatePager {
 
 	@Override
 	public void show(Component invoker, int x, int y) {
-		if (!model.isValid()) {
-			return;
+		if (model.isValid()) {
+			selected = model.getDate();
+		} else {
+			selected = new Date();
 		}
-
-		selected = model.getDate();
 
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(selected);
