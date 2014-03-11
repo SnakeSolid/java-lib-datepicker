@@ -221,7 +221,8 @@ public class DatePopup extends JPopupMenu implements DatePager {
 
 			modelCal.setTime(modelDate);
 
-			calendar.set(Calendar.HOUR, modelCal.get(Calendar.HOUR));
+			calendar.set(Calendar.HOUR_OF_DAY,
+					modelCal.get(Calendar.HOUR_OF_DAY));
 			calendar.set(Calendar.MINUTE, modelCal.get(Calendar.MINUTE));
 			calendar.set(Calendar.SECOND, modelCal.get(Calendar.SECOND));
 			calendar.set(Calendar.MILLISECOND,
