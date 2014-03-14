@@ -19,13 +19,14 @@ import ru.snake.datepicker.model.DatePickerModelListener;
 import ru.snake.datepicker.model.DefaultDatePickerModel;
 
 @SuppressWarnings("serial")
-public class DatePicker extends JPanel implements DatePickerModelListener,
-		FocusListener {
+public class DatePicker extends JPanel implements DatePickerModelListener, FocusListener {
 
 	private final JTextField dateText;
 	private final JButton popupButton;
 	private final DatePopup popup;
 	private final DatePickerModel model;
+
+	private boolean markEmpty;
 
 	public DatePicker(Date value) {
 		this(new DefaultDatePickerModel());
@@ -33,6 +34,8 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 
 	public DatePicker(DatePickerModel model) {
 		this.model = model;
+
+		markEmpty = true;
 
 		dateText = new JTextField(model.getText());
 		dateText.addFocusListener(this);
@@ -50,6 +53,19 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 		model.addDateChangeListener(this);
 	}
 
+	public boolean isMarkEmpty() {
+		return markEmpty;
+	}
+
+	public void setMarkEmpty(boolean markEmpty) {
+		this.markEmpty = markEmpty;
+	}
+
+	@Override
+	public int getBaseline(int width, int height) {
+		return dateText.getBaseline(width, height);
+	}
+
 	public Date getValue() {
 		return model.getDate();
 	}
@@ -65,13 +81,20 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	}
 
 	private void updateText() {
-		dateText.setText(model.getText());
+		String text = model.getText();
+
+		dateText.setText(text);
+
+		if (text.isEmpty() && markEmpty) {
+			dateText.setBackground(UIManager.getColor("OptionPane.warningDialog.titlePane.background"));
+
+			return;
+		}
 
 		if (model.isValid()) {
 			dateText.setBackground(UIManager.getColor("TextField.background"));
 		} else {
-			dateText.setBackground(UIManager
-					.getColor("OptionPane.warningDialog.titlePane.background"));
+			dateText.setBackground(UIManager.getColor("OptionPane.warningDialog.titlePane.background"));
 		}
 	}
 
