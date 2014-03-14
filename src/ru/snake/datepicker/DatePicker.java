@@ -1,14 +1,16 @@
 package ru.snake.datepicker;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
-import java.awt.Insets;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.Date;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -19,7 +21,8 @@ import ru.snake.datepicker.model.DatePickerModelListener;
 import ru.snake.datepicker.model.DefaultDatePickerModel;
 
 @SuppressWarnings("serial")
-public class DatePicker extends JPanel implements DatePickerModelListener, FocusListener {
+public class DatePicker extends JPanel implements DatePickerModelListener,
+		FocusListener {
 
 	private final JTextField dateText;
 	private final JButton popupButton;
@@ -37,13 +40,25 @@ public class DatePicker extends JPanel implements DatePickerModelListener, Focus
 
 		markEmpty = true;
 
+		Color outerBorder = UIManager.getColor("ComboBox.buttonDarkShadow");
+		Color innerBorder = UIManager.getColor("ComboBox.buttonShadow");
+		Font editorFont = UIManager.getFont("ComboBox.font");
+
+		setBorder(BorderFactory.createLineBorder(outerBorder));
+
+		popup = new DatePopup(model);
+
 		dateText = new JTextField(model.getText());
+		dateText.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(innerBorder, 1),
+				BorderFactory.createEmptyBorder(2, 2, 2, 5)));
+		dateText.setFont(editorFont);
 		dateText.addFocusListener(this);
 
 		popupButton = new JButton("<HTML>&hellip;</HTML>");
-		popup = new DatePopup(model);
-
-		popupButton.setMargin(new Insets(0, 4, 0, 4));
+		popupButton.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(0, 1, 0, 0, outerBorder),
+				BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 		popupButton.addActionListener(new DropButtonListener(popup));
 
 		setLayout(new BorderLayout());
@@ -86,7 +101,8 @@ public class DatePicker extends JPanel implements DatePickerModelListener, Focus
 		dateText.setText(text);
 
 		if (text.isEmpty() && markEmpty) {
-			dateText.setBackground(UIManager.getColor("OptionPane.warningDialog.titlePane.background"));
+			dateText.setBackground(UIManager
+					.getColor("OptionPane.warningDialog.titlePane.background"));
 
 			return;
 		}
@@ -94,7 +110,8 @@ public class DatePicker extends JPanel implements DatePickerModelListener, Focus
 		if (model.isValid()) {
 			dateText.setBackground(UIManager.getColor("TextField.background"));
 		} else {
-			dateText.setBackground(UIManager.getColor("OptionPane.warningDialog.titlePane.background"));
+			dateText.setBackground(UIManager
+					.getColor("OptionPane.warningDialog.titlePane.background"));
 		}
 	}
 
