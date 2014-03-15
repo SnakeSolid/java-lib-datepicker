@@ -1,62 +1,53 @@
 package ru.snake.datepicker.model;
 
-import java.text.DateFormat;
-import java.text.ParseException;
+import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 
-public class DefaultDatePickerModel extends AbstractDatePickerModel implements
-		DatePickerModel {
+public class DefaultDatePickerModel implements DatePickerModel {
 
-	private final DateFormat format;
+	private Collection<DatePickerModelListener> listeners;
+
+	protected Date date;
 
 	public DefaultDatePickerModel() {
-		this(ModelFormat.DATETIME);
+		listeners = new LinkedList<DatePickerModelListener>();
+
+		date = new Date();
 	}
 
-	public DefaultDatePickerModel(ModelFormat modelFormat) {
-		switch (modelFormat) {
-		case DATE:
-			format = DateFormat.getDateInstance(DateFormat.DEFAULT);
-			break;
+	public final void addDateChangeListener(DatePickerModelListener listener) {
+		if (!listeners.contains(listener)) {
+			listeners.add(listener);
 
-		case TIME:
-			format = DateFormat.getTimeInstance(DateFormat.DEFAULT);
-			break;
-
-		case DATETIME:
-			format = DateFormat.getDateTimeInstance(DateFormat.DEFAULT,
-					DateFormat.SHORT);
-			break;
-
-		default:
-			throw new IllegalArgumentException();
+			listener.modelChenged(this);
 		}
 	}
 
-	public DefaultDatePickerModel(DateFormat format) {
-		this.format = format;
+	public final void removeDateChangeListener(DatePickerModelListener listener) {
+		if (listeners.contains(listener)) {
+			listeners.remove(listener);
+		}
 	}
 
-	@Override
-	protected String doTextFromDate(Date value) {
-		if (value == null) {
-			return "";
+	private final void fireModelChanged() {
+		for (DatePickerModelListener listener : listeners) {
+			listener.modelChenged(this);
 		}
-
-		return format.format(value);
 	}
 
-	@Override
-	protected Date doTextToDate(String value) {
-		Date result;
+	public boolean isValid() {
+		return date != null;
+	}
 
-		try {
-			result = format.parse(value);
-		} catch (ParseException e) {
-			result = null;
-		}
+	public void setDate(Date value) {
+		date = value;
 
-		return result;
+		fireModelChanged();
+	}
+
+	public Date getDate() {
+		return date;
 	}
 
 }

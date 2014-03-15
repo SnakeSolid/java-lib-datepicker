@@ -8,10 +8,6 @@ public interface DatePickerModel {
 
 	public void removeDateChangeListener(DatePickerModelListener listener);
 
-	public void setText(String value);
-
-	public String getText();
-
 	public boolean isValid();
 
 	public void setDate(Date date);

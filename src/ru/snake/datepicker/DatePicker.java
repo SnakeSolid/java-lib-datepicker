@@ -6,39 +6,63 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.text.DateFormat;
 import java.util.Date;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.UIManager;
+import javax.swing.text.DateFormatter;
+import javax.swing.text.DefaultFormatterFactory;
 
+import ru.snake.datepicker.format.DatePickerFormat;
+import ru.snake.datepicker.format.NullableDateFormatter;
 import ru.snake.datepicker.model.DatePickerModel;
 import ru.snake.datepicker.model.DatePickerModelListener;
 import ru.snake.datepicker.model.DefaultDatePickerModel;
 
 @SuppressWarnings("serial")
 public class DatePicker extends JPanel implements DatePickerModelListener,
-		FocusListener {
+		PropertyChangeListener {
 
-	private final JTextField dateText;
+	private final JFormattedTextField dateText;
 	private final JButton popupButton;
 	private final DatePopup popup;
 	private final DatePickerModel model;
 
+	private DateFormat dateFormat;
 	private boolean markEmpty;
 
+	public DatePicker() {
+		this(new DefaultDatePickerModel(), DatePickerFormat.DATETIME, false);
+	}
+
 	public DatePicker(Date value) {
-		this(new DefaultDatePickerModel());
+		this(new DefaultDatePickerModel(), DatePickerFormat.DATETIME, false);
+
+		model.setDate(value);
 	}
 
 	public DatePicker(DatePickerModel model) {
-		this.model = model;
+		this(model, DatePickerFormat.DATETIME, false);
+	}
 
-		markEmpty = true;
+	public DatePicker(DatePickerModel model, boolean markEmpty) {
+		this(model, DatePickerFormat.DATETIME, markEmpty);
+	}
+
+	public DatePicker(DatePickerModel model, DatePickerFormat pickerFormat) {
+		this(model, pickerFormat, false);
+	}
+
+	public DatePicker(DatePickerModel model, DatePickerFormat pickerFormat,
+			boolean markEmpty) {
+		this.model = model;
+		this.markEmpty = markEmpty;
 
 		Color outerBorder = UIManager.getColor("ComboBox.buttonDarkShadow");
 		Color innerBorder = UIManager.getColor("ComboBox.buttonShadow");
@@ -48,12 +72,14 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 
 		popup = new DatePopup(model);
 
-		dateText = new JTextField(model.getText());
+		dateText = new JFormattedTextField();
 		dateText.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(innerBorder, 1),
-				BorderFactory.createEmptyBorder(2, 2, 2, 5)));
+				BorderFactory.createEmptyBorder(2, 3, 2, 5)));
 		dateText.setFont(editorFont);
-		dateText.addFocusListener(this);
+		dateText.addPropertyChangeListener("value", this);
+
+		setDatePickerFormat(pickerFormat);
 
 		popupButton = new JButton("<HTML>&hellip;</HTML>");
 		popupButton.setBorder(BorderFactory.createCompoundBorder(
@@ -68,12 +94,57 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 		model.addDateChangeListener(this);
 	}
 
+	private void updateDatePickerFormat() {
+		DateFormatter formatter;
+
+		if (markEmpty) {
+			formatter = new DateFormatter(dateFormat);
+		} else {
+			formatter = new NullableDateFormatter(dateFormat);
+		}
+
+		DefaultFormatterFactory factory = new DefaultFormatterFactory();
+		factory.setDefaultFormatter(formatter);
+
+		dateText.setFormatterFactory(factory);
+	}
+
+	public void setDatePickerFormat(DatePickerFormat pickerFormat) {
+		switch (pickerFormat) {
+		case DATE:
+			dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT);
+			break;
+
+		case TIME:
+			dateFormat = DateFormat.getTimeInstance(DateFormat.DEFAULT);
+			break;
+
+		case DATETIME:
+			dateFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT,
+					DateFormat.SHORT);
+			break;
+
+		default:
+			throw new IllegalArgumentException();
+		}
+
+		updateDatePickerFormat();
+	}
+
+	public void setFormat(DateFormat dateFormat) {
+		this.dateFormat = dateFormat;
+
+		updateDatePickerFormat();
+	}
+
 	public boolean isMarkEmpty() {
 		return markEmpty;
 	}
 
 	public void setMarkEmpty(boolean markEmpty) {
 		this.markEmpty = markEmpty;
+
+		updateDatePickerFormat();
 	}
 
 	@Override
@@ -96,18 +167,9 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 	}
 
 	private void updateText() {
-		String text = model.getText();
+		dateText.setValue(model.getDate());
 
-		dateText.setText(text);
-
-		if (text.isEmpty() && markEmpty) {
-			dateText.setBackground(UIManager
-					.getColor("OptionPane.warningDialog.titlePane.background"));
-
-			return;
-		}
-
-		if (model.isValid()) {
+		if (model.isValid() || !markEmpty) {
 			dateText.setBackground(UIManager.getColor("TextField.background"));
 		} else {
 			dateText.setBackground(UIManager
@@ -145,11 +207,28 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 		}
 	}
 
-	public void focusGained(FocusEvent arg0) {
-	}
+	@Override
+	public void propertyChange(PropertyChangeEvent event) {
+		if (event.getSource() == dateText) {
+			Object newValue = event.getNewValue();
+			Object oldValue = event.getOldValue();
 
-	public void focusLost(FocusEvent event) {
-		model.setText(dateText.getText());
+			if (newValue == oldValue) {
+				return;
+			}
+
+			if (newValue != null && newValue.equals(oldValue)) {
+				return;
+			}
+
+			if (newValue == null) {
+				model.setDate(null);
+			} else {
+				Date date = (Date) newValue;
+
+				model.setDate(date);
+			}
+		}
 	}
 
 }
