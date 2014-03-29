@@ -12,6 +12,7 @@ import java.text.DateFormat;
 import java.util.Date;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
@@ -28,6 +29,8 @@ import ru.snake.datepicker.model.DefaultDatePickerModel;
 @SuppressWarnings("serial")
 public class DatePicker extends JPanel implements DatePickerModelListener,
 		PropertyChangeListener {
+
+	private static final String BUTTON_TEXT = "<HTML>&hellip;</HTML>";
 
 	private final JFormattedTextField dateText;
 	private final JButton popupButton;
@@ -81,7 +84,7 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 
 		setDatePickerFormat(pickerFormat);
 
-		popupButton = new JButton("<HTML>&hellip;</HTML>");
+		popupButton = new JButton(BUTTON_TEXT);
 		popupButton.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createMatteBorder(0, 1, 0, 0, outerBorder),
 				BorderFactory.createEmptyBorder(3, 3, 3, 3)));
@@ -92,6 +95,20 @@ public class DatePicker extends JPanel implements DatePickerModelListener,
 		add(popupButton, BorderLayout.LINE_END);
 
 		model.addDateChangeListener(this);
+	}
+
+	public void setIcon(Icon icon) {
+		if (icon == null) {
+			popupButton.setText(BUTTON_TEXT);
+			popupButton.setIcon(null);
+		} else {
+			popupButton.setText("");
+			popupButton.setIcon(icon);
+		}
+	}
+
+	public Icon getIcon() {
+		return popupButton.getIcon();
 	}
 
 	private void updateDatePickerFormat() {
